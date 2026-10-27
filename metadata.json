@@ -1,0 +1,7 @@
+{
+  "name": "Godongwane Royal Routes",
+  "description": "Royal travel bookings for flights, luxury hotels, and safari resorts with real-time availability, secure payments, interactive itinerary management, and royal concierge support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

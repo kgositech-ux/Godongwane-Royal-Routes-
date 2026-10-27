@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing traveler tier, contact information, and preferences.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The user's unique Firebase Auth UID." },
+        "email": { "type": "string", "description": "Traveler's primary contact email." },
+        "displayName": { "type": "string", "description": "Traveler's full legal name." },
+        "photoURL": { "type": "string", "description": "Profile avatar URL." },
+        "phoneNumber": { "type": "string", "description": "Phone number with international country code." },
+        "memberTier": { "type": "string", "description": "Godongwane Royal Routes loyalty tier status." },
+        "pointsBalance": { "type": "number", "description": "Loyalty points earned from royal expeditions." },
+        "createdAt": { "type": "string", "description": "Account registration timestamp." },
+        "updatedAt": { "type": "string", "description": "Last profile update timestamp." }
+      },
+      "required": ["id", "email", "displayName"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Travel reservation for flights, luxury hotels, private safari resorts, or royal safari expeditions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique booking document ID." },
+        "userId": { "type": "string", "description": "UID of the traveler who booked this reservation." },
+        "userEmail": { "type": "string", "description": "Email address of the traveler." },
+        "bookingReference": { "type": "string", "description": "Hexadecimal or alphanumeric booking PNR code." },
+        "type": { "type": "string", "enum": ["flight", "hotel", "resort", "package"], "description": "Category of travel reservation." },
+        "title": { "type": "string", "description": "Title of the reservation (flight route, hotel name, or resort)." },
+        "destination": { "type": "string", "description": "Destination city, country, or reserve." },
+        "origin": { "type": "string", "description": "Origin departure location." },
+        "startDate": { "type": "string", "description": "Departure or check-in date (ISO-8601)." },
+        "endDate": { "type": "string", "description": "Return or check-out date (ISO-8601)." },
+        "passengersOrGuests": { "type": "number", "description": "Count of travelers or guests." },
+        "cabinOrRoomType": { "type": "string", "description": "Selected cabin, villa, or royal suite class." },
+        "totalAmount": { "type": "number", "description": "Total charge amount in selected currency." },
+        "currency": { "type": "string", "description": "Three-letter ISO currency code." },
+        "status": { "type": "string", "enum": ["confirmed", "checked_in", "modified", "cancelled", "completed"], "description": "Lifecycle state of the reservation." },
+        "paymentStatus": { "type": "string", "enum": ["paid", "refunded"], "description": "Payment authorization status." },
+        "paymentMethod": { "type": "string", "description": "Payment card or method label." },
+        "specialRequests": { "type": "string", "description": "Custom concierge instructions, dietary, or transfer requests." },
+        "flightNumber": { "type": "string", "description": "Flight identification code if applicable." },
+        "seatOrRoomNumber": { "type": "string", "description": "Assigned seat or suite allocation." },
+        "notes": { "type": "string", "description": "Internal traveler notes." },
+        "createdAt": { "type": "string", "description": "Creation timestamp." },
+        "updatedAt": { "type": "string", "description": "Last update timestamp." }
+      },
+      "required": ["id", "userId", "bookingReference", "type", "title", "destination", "startDate", "status", "totalAmount"]
+    },
+    "SupportMessage": {
+      "title": "SupportMessage",
+      "description": "Direct communication message between traveler and royal concierge support desk.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique support message ID." },
+        "userId": { "type": "string", "description": "UID of traveler in the conversation." },
+        "bookingId": { "type": "string", "description": "Associated booking reference or ID if applicable." },
+        "senderName": { "type": "string", "description": "Name of the message sender." },
+        "senderRole": { "type": "string", "enum": ["traveler", "concierge"], "description": "Role of the sender." },
+        "text": { "type": "string", "description": "Message content." },
+        "createdAt": { "type": "string", "description": "Sent timestamp." }
+      },
+      "required": ["id", "userId", "senderName", "senderRole", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile documents accessible only by the owner."
+    },
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Travel bookings and itineraries owned by the respective traveler."
+    },
+    "/supportMessages/{messageId}": {
+      "schema": { "$ref": "#/entities/SupportMessage" },
+      "description": "Concierge support messages between traveler and route support team."
+    }
+  }
+}

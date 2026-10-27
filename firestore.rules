@@ -1,0 +1,104 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all unknown paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Connection testing endpoint for app bootstrap
+    match /test/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Blanket user enumeration disabled
+      allow create: if isOwner(userId)
+                    && incoming().id == userId
+                    && incoming().displayName is string
+                    && incoming().displayName.size() <= 120;
+      allow update: if isOwner(userId)
+                    && incoming().id == userId
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'phoneNumber', 'photoURL', 'memberTier', 'pointsBalance', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // Bookings Collection
+    match /bookings/{bookingId} {
+      function isValidBooking(data) {
+        return data.id is string
+          && data.userId is string
+          && data.userId == request.auth.uid
+          && data.bookingReference is string && data.bookingReference.size() <= 32
+          && data.type in ['flight', 'hotel', 'resort', 'package']
+          && data.title is string && data.title.size() <= 200
+          && data.destination is string && data.destination.size() <= 120
+          && data.startDate is string && data.startDate.size() <= 40
+          && data.status in ['confirmed', 'checked_in', 'modified', 'cancelled', 'completed']
+          && data.totalAmount is number && data.totalAmount >= 0;
+      }
+
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+                    && isValidId(bookingId)
+                    && isValidBooking(incoming());
+      allow update: if isSignedIn()
+                    && existing().userId == request.auth.uid
+                    && incoming().userId == request.auth.uid
+                    && isValidBooking(incoming())
+                    && incoming().diff(existing()).affectedKeys().hasOnly([
+                         'startDate', 'endDate', 'cabinOrRoomType', 'status', 
+                         'specialRequests', 'seatOrRoomNumber', 'notes', 
+                         'passengersOrGuests', 'totalAmount', 'updatedAt', 'paymentStatus'
+                       ]);
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Support Messages Collection
+    match /supportMessages/{messageId} {
+      function isValidMessage(data) {
+        return data.id is string
+          && data.userId is string
+          && data.userId == request.auth.uid
+          && data.senderName is string && data.senderName.size() <= 100
+          && data.senderRole in ['traveler', 'concierge']
+          && data.text is string && data.text.size() <= 2000
+          && data.createdAt is string && data.createdAt.size() <= 50;
+      }
+
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+                    && isValidId(messageId)
+                    && isValidMessage(incoming());
+      allow update: if false; // Messages are immutable
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+  }
+}
